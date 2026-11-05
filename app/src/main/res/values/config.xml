@@ -31,6 +31,15 @@
     <string-array name="hidden_apps">
         <item>com.mediatek.wwtv.tvcenter</item>
         <item>com.mitv.gallery</item>
+        <!-- Keep previous evaluation apps installed, but omit their duplicate shortcuts in Unified. -->
+        <item>com.k3nnut.tvhome.home.candidate.v8</item>
+        <item>com.k3nnut.tvhome.home.candidate.v81</item>
+        <item>com.k3nnut.tvhome.home.candidate.v83</item>
+        <item>com.k3nnut.tvhome.home.candidate.v831</item>
+        <item>com.k3nnut.tvhome.ambient.preview.v5</item>
+        <item>com.k3nnut.tvhome.ambient.preview.v61</item>
+        <item>com.k3nnut.tvhome.ambient.preview.v63</item>
+        <item>com.k3nnut.tvhome.ambient.preview.v631</item>
     </string-array>
 
     <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. Leave empty to omit. -->
