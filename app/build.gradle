@@ -1,0 +1,59 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.gathin.tvhome'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.k3nnut.cleanyourtv.unified'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0.0-alpha01'
+    }
+    def signingNames = ['CYTV_KEYSTORE', 'CYTV_STORE_PASSWORD', 'CYTV_KEY_ALIAS', 'CYTV_KEY_PASSWORD']
+    def signingReady = signingNames.every { System.getenv(it) }
+    signingConfigs {
+        if (signingReady) {
+            distribution {
+                storeFile file(System.getenv('CYTV_KEYSTORE'))
+                storePassword System.getenv('CYTV_STORE_PASSWORD')
+                keyAlias System.getenv('CYTV_KEY_ALIAS')
+                keyPassword System.getenv('CYTV_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug { versionNameSuffix '-debug' }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (signingReady) signingConfig signingConfigs.distribution
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    lint { abortOnError true }
+}
+
+// Signing is optional for analysis/tests, mandatory for any distributable release.
+tasks.configureEach { task ->
+    if (task.name == 'packageRelease') {
+        task.doFirst {
+            if (!['CYTV_KEYSTORE', 'CYTV_STORE_PASSWORD', 'CYTV_KEY_ALIAS', 'CYTV_KEY_PASSWORD'].every { System.getenv(it) }) {
+                throw new GradleException('Release signing is required. See README.md; debug keys are never used for release.')
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
+    implementation 'com.google.zxing:core:3.5.3'
+    testImplementation 'junit:junit:4.13.2'
+}
