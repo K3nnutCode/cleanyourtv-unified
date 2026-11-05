@@ -96,7 +96,7 @@ or a permanent production signing identity.
 | Onboarding/Home | Onboarding and gallery observed; Unified later verified as selected default Home |
 | Upload | Owner reports photo upload works; exact browser/connection path not independently recorded |
 | Existing photo screensaver | Ambient v6.3.1 automatically entered after five minutes idle and visibly displayed photos |
-| Unified DreamService | Not selected or tested; shared gallery/Dream behaviour remains unverified |
+| Unified DreamService | Initially untested; later approved assisted selection/idle-entry/photo-display test passed, recorded below |
 | Preview shortcuts | Five enabled old preview apps hidden using Unified's saved shortcut list; cleaned grid visually verified |
 | Previous Home removal | At owner's later explicit request, removed Home v8.3.1 with app data retained after saving/verifying its original APK |
 | Independent local build | 192 JVM tests, zero failures/errors; debug lint zero errors and 89 warnings; assembleDebug passed |
@@ -121,25 +121,74 @@ Source changes after this test are local review work, not deployed APK changes.
 
 Remaining checks: wrong/expired upload codes; upload shutdown on Back/Home and
 mid-transfer; gallery delete/cancel; exact Wi-Fi/Ethernet coverage; owner-reported
-remote navigation and HDMI results; Unified Dream selection, shared-photo
-display, idle entry/dismissal, reboot and recovery. No Xiaomi/AIFA coverage or
+remote navigation and HDMI results; reboot and
+recovery. Unified selection/idle entry/photo display were later verified below. No Xiaomi/AIFA coverage or
 universal compatibility claim is established.
 
 ## Requested setup improvements
 
 - Hide known older Home/Ambient preview shortcuts by default in Unified. The
-  local review configuration now lists those exact packages in `hidden_apps`;
+  configuration now lists those exact packages in `hidden_apps`;
   they remain installed and usable outside Unified. Existing theme overrides
   and explicitly added library shortcuts must be considered during upgrades.
-- Reduce manual screensaver setup. This is requested, not implemented or
-  verified. Ordinary apps cannot silently write Android's secure settings;
-  keep native screensaver selection as the supported fallback. Investigate an
-  explicitly authorised installer-assisted flow with prior-choice capture,
-  verification and rollback, without broad secure-settings/accessibility grants,
-  hidden APIs, root, or a promise that every vendor supports it. Do not switch
-  the owner's selected screensaver just to satisfy this documentation update.
+- Reduce manual screensaver setup. A local feature branch now implements the
+  authorised installer-assisted flow described below. Ordinary apps still cannot
+  silently write Android's secure settings; native selection is the APK-only
+  path when available. No universal model-support claim is established.
   References: [Settings.Secure](https://developer.android.com/reference/android/provider/Settings.Secure)
   and [DreamService](https://developer.android.com/reference/android/service/dreams/DreamService).
+
+## Assisted screensaver setup implementation
+
+Diagnosis on this TCL: `query-services` lists Unified's enabled DreamService,
+but `android.settings.DREAM_SETTINGS` resolves to no activity. The missing
+native picker is independently observed; a general vendor allowlist or defect
+in Dream registration was not established.
+
+`Set-Screensaver.ps1` detects API/TV capabilities and picker availability. Its
+default Status mode is read-only. Explicit Enable selects the registered Unified
+component and activation flags through already authorised ADB, after saving an
+exclusive local recovery snapshot. It preserves the idle timeout unless requested.
+Every write is read back; setup failures attempt rollback and report failures.
+Restore verifies the selected connection and refuses to overwrite a newer owner
+choice. Recovery files are private and excluded from Git by their documented
+`.screensaver-recovery.json` suffix. No app permission grant, manufacturer-package
+mutation, root or hidden API is used. The PowerShell companion is for Windows
+installation, not a silent APK-only setup guarantee.
+
+Install-Test.ps1 supports an explicit screensaver configuration option and now
+checks APK identity, signature, TV minimum API and existing signer before install.
+On the actual TCL, its signer-mismatch path correctly rejected the newly built
+local APK before installation. Status mode correctly reported the missing picker
+and the existing v6.3.1 selection. Onboarding now explains installer help when the
+native picker is absent and displays Unified selection status when readable.
+Standard Dream preview metadata is included for pickers that support it; this
+does not create a missing vendor picker.
+
+Local validation: Android testDebugUnitTest, lintDebug and assembleDebug passed;
+192 tests, no failures/errors; zero lint errors and 89 warnings. The simulated
+ADB integration tests cover selection, timer, idempotency, recovery snapshot
+protection, exact/absent-setting restore, refused-write rollback, newer-choice
+protection, connection binding, old API, missing service and unsafe recovery data.
+The preview workflow now includes these script tests; that new CI step has not
+yet been executed on GitHub. No new-signer APK was installed on the TCL.
+
+The owner separately approved the live selection test. Enable was run against
+the existing, verified CI preview on the TCL without reinstalling it. It saved
+the prior Ambient v6.3.1 choice and left the existing 300000 ms timer unchanged.
+The TCL retained Unified's component without using its missing native picker.
+A fresh uninterrupted idle interval was Awake at 30, 76, 171 and 251 seconds.
+At 314.1 seconds, power reported Dreaming and DreamManager identified
+`com.k3nnut.cleanyourtv.unified/com.gathin.tvhome.AmbientPhotoDream` with a
+connected service, start broadcast sent and `mCurrentDreamIsTest=false`.
+A local screenshot visually confirmed a photo and the enabled regional overlay.
+This independently verifies Unified's own idle playback on this one TCL; it is
+separate from the earlier v6.3.1 test. Unified remains selected at five minutes;
+the original recovery snapshot remains private and local. The owner confirmed
+that pressing Back on the actual remote returned to Unified Home normally.
+Repeated Enable on the actual TCL performed no writes and preserved the original
+recovery snapshot (hash compared before/after). New onboarding
+UI/metadata are build-verified only, because the new-signer APK was not installed.
 
 ## Distribution gate
 

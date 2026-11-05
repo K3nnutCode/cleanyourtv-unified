@@ -10,8 +10,9 @@ slideshow and `AmbientPhotoDream` in one application.
 ## Repository status
 
 Evaluation alpha. Installation and Home were exercised on one TCL Smart TV,
-Android 11/API 30; the owner confirmed photo upload works. The five-minute idle
-test used the separate v6.3.1 screensaver, not Unified's DreamService. Public-release
+Android 11/API 30; the owner confirmed photo upload works. A later approved
+installer-assisted setup selected Unified's own screensaver, which automatically
+entered after five minutes and displayed its uploaded photos. Public-release
 gates and attribution requirements are recorded below and in NOTICE.md.
 
 ## Try with Codex or Claude Code
@@ -41,6 +42,59 @@ or **Manage screensaver photos**. Add photos in the gallery; choose the photo
 screensaver through native settings. Manufacturer restrictions may prevent
 default Home or Dream selection. No manufacturer package is disabled and no
 default Home or secure screensaver setting is changed by this application.
+
+### Faster screensaver setup, including TCL Ambient-only menus
+
+Some TVs register Unified's DreamService but expose no standard screensaver
+picker. On the tested TCL Android 11 set, the DreamService was registered while
+`android.settings.DREAM_SETTINGS` had no activity. This does not establish that
+every TCL firmware behaves the same way. Setup detects capabilities rather than
+guessing solely from the brand; onboarding explains when installer help is needed.
+
+The companion installer can select the screensaver through the TV's already
+authorised ADB connection, with the owner's explicit approval. No root,
+accessibility service, manufacturer-app disabling or app secure-settings grant.
+For installation plus screensaver setup in one command:
+
+```powershell
+./Install-Test.ps1 -Device '<authorised target>' -Apk './app/build/outputs/apk/debug/app-debug.apk' -ConfigureScreensaver -ScreensaverBackupPath '../my-tv.screensaver-recovery.json'
+```
+
+Build-tools 34.0.0 must be available through ANDROID_HOME or `-SdkRoot`. The
+installer checks API/TV capabilities, the APK identity and signature, and an
+existing Unified signer's match before installing. It stops on a mismatch;
+do not clear data to install a newly signed debug build.
+
+For an already installed Unified APK, no reinstall is needed:
+
+```powershell
+./Set-Screensaver.ps1 -Device '<authorised target>'
+# After the owner approves selecting Unified:
+./Set-Screensaver.ps1 -Device '<authorised target>' -Mode Enable -BackupPath '../my-tv.screensaver-recovery.json'
+# Optional: include -IdleMinutes 5 only when the owner approves changing the timer.
+```
+
+Status mode is read-only. Enable saves the prior screensaver and activation
+flags before writing, then reads each setting back. The existing idle timer is
+preserved unless `-IdleMinutes` is supplied. Failed setup attempts restore changed
+settings and report any recovery failure; never work around a firmware refusal.
+Keep the recovery file private: it includes the selected TV connection address.
+Repeated setup does not replace the original recovery file. Upload photos into
+Unified first: the old Ambient app's private photos are separate, and Unified
+ends its Dream if its own collection is empty. Verify natural idle entry, photo
+display and real-remote dismissal; successful selection alone is not that test.
+
+Restore the saved choice using the same selected TV connection:
+
+```powershell
+./Set-Screensaver.ps1 -Device '<authorised target>' -Mode Restore -BackupPath '../my-tv.screensaver-recovery.json'
+```
+
+Restore refuses to overwrite settings changed after setup. Keep native Settings
+and authorised ADB available through testing; do not change default Home as part
+of screensaver setup. Normal APK-only installation still cannot silently choose
+a system screensaver. Without an authorised computer, use native settings when
+available; a vendor restriction remains a restriction.
 
 ## Photos and network
 
@@ -101,7 +155,8 @@ low-RAM status locally. API 25 and non-Android platforms are unsupported.
 The prior two APKs were reported working on Xiaomi Android 9. This session
 installed Unified on a TCL Android 11/API 30 set, verified it as the selected
 Home, and received owner confirmation that photo upload works. Unified's own
-DreamService, Xiaomi and AIFA remain unverified. See VERIFICATION.md.
+DreamService passed natural five-minute idle entry and photo display on that set
+using authorised installer setup. Xiaomi and AIFA remain unverified. See VERIFICATION.md.
 
 Before choosing Home, record the existing default Home and screensaver in TV
 settings and confirm that the remote's Settings/Input buttons still work. Keep

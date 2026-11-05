@@ -12,4 +12,5 @@ dist/
 *.key
 *.signing.properties
 *.log
+*.screensaver-recovery.json
 __pycache__/

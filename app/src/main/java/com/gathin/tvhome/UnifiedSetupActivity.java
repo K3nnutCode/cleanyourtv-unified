@@ -16,9 +16,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** All role changes stay in the vendor's system settings and require the owner's choice. */
+/** The app never changes system roles; an authorised external installer can assist setup. */
 public final class UnifiedSetupActivity extends Activity {
     private LinearLayout content;
+    private TextView screensaverState;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -42,10 +43,11 @@ public final class UnifiedSetupActivity extends Activity {
                 am != null && am.isLowRamDevice()), 17);
         text("1. Add photos. Gallery and screensaver share one private library. "
                 + "Photos in the older Concept B app stay there; upload your originals again.\n"
-                + "2. Choose this screensaver in system settings. Some TVs hide this option.\n"
+                + "2. Set up the photo screensaver below. Some TVs need help from the installer.\n"
                 + "3. Try Home before choosing it as default. Keep your stock launcher enabled.", 18);
         button("Open photo gallery / QR upload", () -> startActivity(new Intent(this, AmbientPhotoActivity.class)));
-        button("Choose screensaver…", () -> openSettings(Settings.ACTION_DREAM_SETTINGS));
+        screensaverState = text(screensaverStatus(), 17);
+        button("Set up photo screensaver…", this::setupScreensaver);
         button("Choose default Home…", () -> new AlertDialog.Builder(this)
                 .setTitle("Choose your Home in system settings")
                 .setMessage("Keep the manufacturer's launcher enabled. To roll back, choose it again "
@@ -83,6 +85,43 @@ public final class UnifiedSetupActivity extends Activity {
         recreate();
     }
 
+    @Override protected void onResume() {
+        super.onResume();
+        if (screensaverState != null) screensaverState.setText(screensaverStatus());
+    }
+
+    private String screensaverStatus() {
+        String selected = null;
+        try { selected = Settings.Secure.getString(getContentResolver(), "screensaver_components"); }
+        catch (SecurityException unavailable) { /* Some vendor firmware restricts status reads. */ }
+        boolean ours = false;
+        if (selected != null) for (String entry : selected.split(",")) {
+            android.content.ComponentName name = android.content.ComponentName.unflattenFromString(entry);
+            if (name != null && name.getPackageName().equals(getPackageName())
+                    && name.getClassName().equals(AmbientPhotoDream.class.getName())) ours = true;
+        }
+        if (ours) return "Unified photo screensaver: selected. Add photos here, then test idle entry.";
+        if (!resolves(Settings.ACTION_DREAM_SETTINGS))
+            return "This TV has no standard screensaver picker. Its Ambient menu may omit installed screensavers. "
+                    + "An authorised computer installer can select Unified and save your previous choice.";
+        return "Unified photo screensaver: not confirmed selected. Open setup to choose it.";
+    }
+
+    private void setupScreensaver() {
+        if (resolves(Settings.ACTION_DREAM_SETTINGS)) { openSettings(Settings.ACTION_DREAM_SETTINGS); return; }
+        new AlertDialog.Builder(this).setTitle("Screensaver setup for this TV")
+                .setMessage("Your TV does not expose Android's standard screensaver picker. "
+                        + "Installing Unified alone cannot change the selected screensaver.\n\n"
+                        + "Ask your installer to run the repository's Set-Screensaver.ps1 for this "
+                        + "already authorised TV. With your approval it selects Unified directly, "
+                        + "checks the result and saves the previous choice for recovery. "
+                        + "No root, accessibility service or disabled TV app is needed.\n\n"
+                        + "Upload photos into Unified first. Photos in older apps stay separate.")
+                .setNegativeButton("Close", null)
+                .setPositiveButton("Open photo gallery", (d, w) ->
+                        startActivity(new Intent(this, AmbientPhotoActivity.class))).show();
+    }
+
     private boolean resolves(String action) {
         return new Intent(action).resolveActivity(getPackageManager()) != null;
     }
@@ -97,11 +136,12 @@ public final class UnifiedSetupActivity extends Activity {
         }
     }
 
-    private void text(String value, int size) {
+    private TextView text(String value, int size) {
         TextView label = new TextView(this);
         label.setText(value); label.setTextSize(size); label.setTextColor(0xffedf4fa);
         label.setPadding(0, 8, 0, 8);
         content.addView(label);
+        return label;
     }
 
     private Button button(String label, Runnable action) {
