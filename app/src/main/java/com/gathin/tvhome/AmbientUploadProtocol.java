@@ -69,6 +69,20 @@ final class AmbientUploadProtocol {
         return new Request(parts[0], parts[1], headers, length);
     }
 
+    /** Consume a bounded rejected upload before closing, so TCP does not discard its error response.
+     * Caller supplies the same deadline/cancellation-aware stream used for photo imports.
+     * Nothing is decoded or saved. Never drain unbounded or chunked request bodies.
+     */
+    static void discardRejectedBody(InputStream input, long length) throws IOException {
+        if (length < 0 || length > MAX_UPLOAD_BYTES) throw new IOException("Unbounded rejected body");
+        byte[] buffer = new byte[8192];
+        while (length > 0) {
+            int count = input.read(buffer, 0, (int) Math.min(buffer.length, length));
+            if (count < 0) throw new IOException("Incomplete rejected upload");
+            length -= count;
+        }
+    }
+
     private static String line(InputStream in, int[] remaining) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         int previous = -1;

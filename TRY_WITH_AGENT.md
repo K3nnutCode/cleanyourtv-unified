@@ -36,9 +36,12 @@ check its signer first; stop on any mismatch instead of deleting its data.
 Preserve any older CleanYourTV or Concept B packages and their photos.
 
 Keep the stock launcher enabled. Do not change default Home, accessibility
-services, secure screensaver settings or manufacturer packages. Ask separately
-before any potentially disruptive change. Let me select Home or screensaver in
-native TV settings only after testing, with recovery instructions ready.
+services or manufacturer packages. Ask separately before changing the selected
+screensaver or idle timer. Detect native screensaver picker availability; if it
+is missing, offer the reviewed Set-Screensaver.ps1 installer-assisted flow.
+Only after my explicit approval, save a private recovery snapshot, select Unified,
+verify the change and test idle entry. Keep the existing timer unless I approve
+a change. Use native selection when appropriate. Have recovery instructions ready.
 
 Guide me through onboarding, gallery and QR upload on a trusted home network.
 Explain that the temporary upload page uses unencrypted local HTTP. Check wrong
@@ -82,7 +85,9 @@ or special app permission grants are needed. Stop if the TV refuses a write.
 
 After the repository is uploaded, the owner can open **Actions → Build preview
 APK → Run workflow**. A successful run supplies a `cleanyourtv-unified-preview`
-artifact containing the debug APK and SHA256SUMS.txt. GitHub artifact downloads
+artifact containing the debug APK, setup/recovery scripts, QUICK_START.md,
+source revision, build-run link, signature report and SHA256SUMS.txt covering the
+bundle's files. GitHub artifact downloads
 require access to the repository and normally require signing in. This workflow
 does not publish a GitHub Release.
 

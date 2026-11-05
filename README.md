@@ -17,14 +17,18 @@ gates and attribution requirements are recorded below and in NOTICE.md.
 
 ## Try with Codex or Claude Code
 
-See [TRY_WITH_AGENT.md](TRY_WITH_AGENT.md) for a ready-to-copy installation request.
-A manual **Build preview APK** workflow is included for the repository owner to
-generate a clearly labelled debug testing APK. No production release is automatic.
+Start with [QUICK_START.md](QUICK_START.md), or use the ready-to-copy installation
+request in [TRY_WITH_AGENT.md](TRY_WITH_AGENT.md). **Build preview APK** validates
+pull requests and main updates; main/manual runs produce a clearly labelled debug
+testing bundle with the installer, recovery script, guides, source revision and
+checksums. No production release is automatic.
 
 ## Build and try
 
-Use JDK 17, Android SDK platform 34 and build-tools 34.0.0. Set `ANDROID_HOME`
-or an ignored `local.properties` with `sdk.dir`. In this directory run:
+Use PowerShell 7, JDK 17, Android platform-tools, SDK platform 34 and build-tools
+34.0.0. Set `ANDROID_HOME` to the SDK root. A source build can alternatively use an
+ignored `local.properties` with `sdk.dir`; in that case pass the same SDK path to
+Install-Test.ps1 using `-SdkRoot`. In this directory run:
 
 ```powershell
 ./gradlew.bat --no-daemon testDebugUnitTest lintDebug assembleDebug
