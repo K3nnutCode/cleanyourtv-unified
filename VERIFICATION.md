@@ -170,8 +170,8 @@ Local validation: Android testDebugUnitTest, lintDebug and assembleDebug passed;
 ADB integration tests cover selection, timer, idempotency, recovery snapshot
 protection, exact/absent-setting restore, refused-write rollback, newer-choice
 protection, connection binding, old API, missing service and unsafe recovery data.
-The preview workflow now includes these script tests; that new CI step has not
-yet been executed on GitHub. No new-signer APK was installed on the TCL.
+The preview workflow now includes these script tests; at initial implementation
+that new CI step had not yet executed on GitHub. No new-signer APK was installed on the TCL.
 
 The owner separately approved the live selection test. Enable was run against
 the existing, verified CI preview on the TCL without reinstalling it. It saved
@@ -189,6 +189,46 @@ that pressing Back on the actual remote returned to Unified Home normally.
 Repeated Enable on the actual TCL performed no writes and preserved the original
 recovery snapshot (hash compared before/after). New onboarding
 UI/metadata are build-verified only, because the new-signer APK was not installed.
+
+## User-readiness audit
+
+A subsequent clean Windows build ran both debug and release JVM suites, both
+lint variants and debug assembly. Before the upload-response regression tests,
+each suite passed 192 tests, each lint variant had zero errors and 89 warnings.
+Release packaging without signing credentials was separately confirmed to fail
+with the required signing guard. The PowerShell 7 setup/recovery integration
+suite passed again. Windows PowerShell 5 was blocked by this computer's script
+execution policy; that policy was not changed. QUICK_START.md now explicitly
+requires PowerShell 7 and describes the other SDK/JDK/ADB prerequisites.
+
+The installed CI APK's local upload page responded successfully, and a wrong
+access code returned HTTP 403. That live check exposed truncated rejection-body
+delivery when a client was still sending a photo. Source now consumes only a
+bounded rejected body through the existing deadline/cancellation stream and
+writes the response together. The invalid-code session limit also applies after
+interrupted requests. Three new JVM regressions cover a full rejection over a
+real loopback TCP connection, exact body boundaries and incomplete/unbounded
+length rejection. Final debug and release suites each pass 195 tests. This source
+fix is not installed on the TV because its debug signer differs; do not describe
+the old APK's rejection message as fixed on hardware.
+
+On the actual TCL, Back during an authenticated incomplete transfer closed the
+active connection and the listener; a new connection was refused. The original
+two photo files were unchanged and no partial file remained. Unified Home,
+Unified's selected Dream and the five-minute timeout were verified afterward.
+
+The old preview workflow only offered a pre-update APK and omitted the new setup
+scripts. It now validates pull requests and main updates, runs both test/lint
+variants plus script tests, and produces bundles on main/manual runs. Bundles
+include setup/recovery scripts, QUICK_START, README, tester/verification notices,
+source revision and build-run link; checksums cover the installation files.
+The copyable agent prompt now permits the approved, snapshot-backed screensaver
+setup path rather than incorrectly requiring native selection on every TV.
+
+Readiness remains guided alpha evaluation, not unrestricted public release.
+Permanent signing and timetable redistribution clearance are unresolved. Additional
+models, firmware/API coverage, reboot/recovery, real HDMI switching and the full
+remote matrix remain incomplete; session-expiry behaviour was not timed on hardware.
 
 ## Distribution gate
 

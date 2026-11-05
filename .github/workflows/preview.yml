@@ -2,6 +2,9 @@ name: Build preview APK
 
 on:
   workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -26,17 +29,21 @@ jobs:
       - name: Test and build debug preview
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug
+          ./gradlew --no-daemon testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleDebug
           python3 verify_apk.py "$ANDROID_HOME/build-tools/34.0.0/aapt" app/build/outputs/apk/debug/app-debug.apk
       - name: Verify signature and prepare preview
+        if: github.event_name != 'pull_request'
         run: |
           mkdir -p preview
           cp app/build/outputs/apk/debug/app-debug.apk preview/CleanYourTV-Unified-1.0.0-alpha01-debug.apk
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose --print-certs preview/*.apk > preview/APK-Signature.txt
-          cp NOTICE.md LICENSE TRY_WITH_AGENT.md preview/
+          cp NOTICE.md LICENSE FONT-LICENSE-OFL.txt README.md QUICK_START.md TRY_WITH_AGENT.md VERIFICATION.md Install-Test.ps1 Set-Screensaver.ps1 preview/
+          git rev-parse HEAD > preview/SOURCE-COMMIT.txt
+          echo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > preview/BUILD-RUN.txt
           cd preview
-          sha256sum *.apk > SHA256SUMS.txt
+          sha256sum *.apk *.ps1 *.md LICENSE FONT-LICENSE-OFL.txt APK-Signature.txt SOURCE-COMMIT.txt BUILD-RUN.txt > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
         with:
           name: cleanyourtv-unified-preview
           path: preview/

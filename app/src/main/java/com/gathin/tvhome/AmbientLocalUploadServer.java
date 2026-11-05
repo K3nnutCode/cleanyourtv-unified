@@ -7,6 +7,7 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Inet4Address;
@@ -101,6 +102,10 @@ final class AmbientLocalUploadServer implements AutoCloseable {
         String reason = "Upload session ended";
         try {
             while (running) {
+                if (wrongCodes >= MAX_WRONG_CODES) {
+                    reason = "Too many invalid access codes; reopen Wi-Fi upload";
+                    break;
+                }
                 if (SystemClock.elapsedRealtime() >= deadline) {
                     reason = "Upload session expired after 10 minutes";
                     break;
@@ -111,10 +116,6 @@ final class AmbientLocalUploadServer implements AutoCloseable {
                     socket.setSoTimeout(12_000);
                     socket.setTcpNoDelay(true);
                     serveOne(socket);
-                    if (wrongCodes >= MAX_WRONG_CODES) {
-                        reason = "Too many invalid access codes; reopen Wi-Fi upload";
-                        break;
-                    }
                 } catch (SocketTimeoutException ignored) {
                     // Poll the expiry timer while there are no browser connections.
                 } catch (IOException problem) {
@@ -165,6 +166,9 @@ final class AmbientLocalUploadServer implements AutoCloseable {
         }
         if (!AmbientUploadProtocol.constantTimeMatches(request.uploadCode, code)) {
             wrongCodes++;
+            if (!request.chunked && request.length >= 0
+                    && request.length <= AmbientUploadProtocol.MAX_UPLOAD_BYTES)
+                AmbientUploadProtocol.discardRejectedBody(input, request.length);
             respond(output, 403, "Incorrect access code", false);
             return;
         }
@@ -214,8 +218,10 @@ final class AmbientLocalUploadServer implements AutoCloseable {
                 + "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; "
                 + "script-src 'unsafe-inline'; connect-src 'self'; form-action 'none'; frame-ancestors 'none'\r\n"
                 + "Connection: close\r\n\r\n";
-        out.write(headers.getBytes(StandardCharsets.US_ASCII));
-        out.write(body);
+        ByteArrayOutputStream response = new ByteArrayOutputStream();
+        response.write(headers.getBytes(StandardCharsets.US_ASCII));
+        response.write(body);
+        out.write(response.toByteArray());
         out.flush();
     }
 
