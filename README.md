@@ -9,7 +9,9 @@ slideshow and `AmbientPhotoDream` in one application.
 
 ## Repository status
 
-Evaluation alpha. No physical TV has been tested with Unified yet. Public-release
+Evaluation alpha. Installation and Home were exercised on one TCL Smart TV,
+Android 11/API 30; the owner confirmed photo upload works. The five-minute idle
+test used the separate v6.3.1 screensaver, not Unified's DreamService. Public-release
 gates and attribution requirements are recorded below and in NOTICE.md.
 
 ## Try with Codex or Claude Code
@@ -45,6 +47,10 @@ default Home or secure screensaver setting is changed by this application.
 Gallery and DreamService use the same private `files/ambient_photos` directory.
 The older preview package's private collection is not readable by Unified.
 Upload original files again; nothing copies or deletes the old app's data.
+Known older Home and Ambient preview shortcuts are hidden by default inside
+Unified's app grid; hiding does not uninstall those apps or change their photos.
+An existing theme's explicit `hidden_apps` override or manually added library
+shortcuts can override these defaults.
 Maximum 100 JPG/PNG/WebP files, 10 MiB each, with magic-byte and decoded-dimension
 validation. Photos are sampled when displayed. Gallery deletion asks first.
 
@@ -92,8 +98,10 @@ or change to the upstream CI/size gate is introduced.
 Android TV 8+ is a target, not a claim that every model works. Device detection
 reports manufacturer/model, API, TV feature, settings/picker availability and
 low-RAM status locally. API 25 and non-Android platforms are unsupported.
-The prior two APKs were reported working on Xiaomi Android 9; Unified itself
-has not been physically verified on Xiaomi, AIFA or other brands in this session.
+The prior two APKs were reported working on Xiaomi Android 9. This session
+installed Unified on a TCL Android 11/API 30 set, verified it as the selected
+Home, and received owner confirmation that photo upload works. Unified's own
+DreamService, Xiaomi and AIFA remain unverified. See VERIFICATION.md.
 
 Before choosing Home, record the existing default Home and screensaver in TV
 settings and confirm that the remote's Settings/Input buttons still work. Keep

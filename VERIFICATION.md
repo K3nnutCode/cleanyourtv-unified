@@ -63,7 +63,7 @@ The broad upstream Python suite was attempted. Shell integration cases hit
 Windows shell execution errors; the run was interrupted. It is not reported as
 passing. The Android/JVM checks above completed separately and successfully.
 
-## Device testing limits
+## Initial session device testing limits
 
 Windows Computer Use inspected the available desktop apps; no TV mirror or
 Android emulator was open. `adb devices -l` found no connected devices.
@@ -75,6 +75,71 @@ Unified has no physical Xiaomi, AIFA or other model verification yet. Remote,
 HDMI, idle Dream entry, real browser QR flow and reboot/recovery tests remain
 required before calling it stable or publicly supported. The uploader's
 plaintext transport is intentional trusted-LAN scope, not HTTPS security.
+
+## Follow-up TCL evaluation — 5 November 2026
+
+Source under test: published commit `b93060ef7ea77d16c8750dae7ea62fad8376e911`.
+The connected GitHub plugin verified preview workflow run `41961958249` and
+artifact `13385942118` against that commit. ZIP SHA-256 matched GitHub's digest:
+`a5a89fafae36fe453efeff331211c2030a02a87651aa09e98fa837bf1e1c620f`.
+APK SHA-256 matched bundled SHA256SUMS.txt:
+`4d236c0570c7155534866906b595d2a508661a6511debe96c56d570e11f15a17`.
+Android apksigner independently verified the APK v2 signature; certificate
+SHA-256: `9e08573cd99725df306f2a50d7484daec55d0578c7bd905dbafe0f33f7ce49e8`.
+This establishes artifact integrity/signing identity, not reproducible builds
+or a permanent production signing identity.
+
+| Check | Actual result |
+| --- | --- |
+| Device | One TCL Smart TV, Android 11/API 30, TV/Leanback features |
+| Installation | Unified was absent; verified CI preview installed successfully |
+| Onboarding/Home | Onboarding and gallery observed; Unified later verified as selected default Home |
+| Upload | Owner reports photo upload works; exact browser/connection path not independently recorded |
+| Existing photo screensaver | Ambient v6.3.1 automatically entered after five minutes idle and visibly displayed photos |
+| Unified DreamService | Not selected or tested; shared gallery/Dream behaviour remains unverified |
+| Preview shortcuts | Five enabled old preview apps hidden using Unified's saved shortcut list; cleaned grid visually verified |
+| Previous Home removal | At owner's later explicit request, removed Home v8.3.1 with app data retained after saving/verifying its original APK |
+| Independent local build | 192 JVM tests, zero failures/errors; debug lint zero errors and 89 warnings; assembleDebug passed |
+
+The owner's five-minute request changed only `screen_off_timeout` from 600000
+to 300000 ms. A fresh idle interval remained uninterrupted: the TV was Awake
+at approximately 65, 126, 195 and 247 seconds; at 306.7 seconds it was Dreaming.
+DreamManager identified the separate Ambient v6.3.1 service as connected and
+started, with `mCurrentDreamIsTest=false`. The five-minute timer remains set.
+This is natural idle-entry evidence for v6.3.1 with Unified as Home, not evidence
+that Unified's own screensaver or photo library is fully integrated on hardware.
+
+The stock Google TV launcher was already disabled when this session connected;
+the agent did not disable it or change its state. Native Settings and authorised
+ADB were available as recovery routes. Installing a new Home candidate initially
+caused Android's Home chooser to appear. Do not assume installation preserves
+the previous default association. No accessibility, root or firmware change.
+
+The local debug build has a different signer from the installed CI preview and
+was not installed over it. No data was cleared to bypass a signature mismatch.
+Source changes after this test are local review work, not deployed APK changes.
+
+Remaining checks: wrong/expired upload codes; upload shutdown on Back/Home and
+mid-transfer; gallery delete/cancel; exact Wi-Fi/Ethernet coverage; owner-reported
+remote navigation and HDMI results; Unified Dream selection, shared-photo
+display, idle entry/dismissal, reboot and recovery. No Xiaomi/AIFA coverage or
+universal compatibility claim is established.
+
+## Requested setup improvements
+
+- Hide known older Home/Ambient preview shortcuts by default in Unified. The
+  local review configuration now lists those exact packages in `hidden_apps`;
+  they remain installed and usable outside Unified. Existing theme overrides
+  and explicitly added library shortcuts must be considered during upgrades.
+- Reduce manual screensaver setup. This is requested, not implemented or
+  verified. Ordinary apps cannot silently write Android's secure settings;
+  keep native screensaver selection as the supported fallback. Investigate an
+  explicitly authorised installer-assisted flow with prior-choice capture,
+  verification and rollback, without broad secure-settings/accessibility grants,
+  hidden APIs, root, or a promise that every vendor supports it. Do not switch
+  the owner's selected screensaver just to satisfy this documentation update.
+  References: [Settings.Secure](https://developer.android.com/reference/android/provider/Settings.Secure)
+  and [DreamService](https://developer.android.com/reference/android/service/dreams/DreamService).
 
 ## Distribution gate
 

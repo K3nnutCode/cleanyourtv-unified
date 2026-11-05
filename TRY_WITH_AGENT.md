@@ -1,7 +1,9 @@
 # Try CleanYourTV Unified with Codex or Claude Code
 
-This is an evaluation alpha for Android TV 8/API 26 and newer. Unified has not
-yet been verified on a physical TV. A friend or family member should stay
+This is an evaluation alpha for Android TV 8/API 26 and newer. Unified installed
+successfully on one TCL Android 11 TV and the owner confirmed photo upload works.
+Its own screensaver remains untested; the idle test used the separate v6.3.1 app.
+A friend or family member should stay
 available to authorise installation and test their real remote. The original
 launcher must remain enabled.
 
