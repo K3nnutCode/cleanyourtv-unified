@@ -2,7 +2,8 @@
 
 This is an evaluation alpha for Android TV 8/API 26 and newer. Unified installed
 successfully on one TCL Android 11 TV and the owner confirmed photo upload works.
-Its own screensaver remains untested; the idle test used the separate v6.3.1 app.
+Its own screensaver later passed five-minute idle entry and photo display on that
+TCL using approved installer-assisted selection; other firmware remains unverified.
 A friend or family member should stay
 available to authorise installation and test their real remote. The original
 launcher must remain enabled.
@@ -54,6 +55,28 @@ settings when testing is finished. Do not publish logs, TV identifiers or photos
 
 The app's initial setup opens its gallery and supported TV settings. Installing
 the APK does not choose it as the default Home or screensaver.
+
+## TVs with Ambient-only menus
+
+Do not assume the brand determines support. First use the read-only
+`Set-Screensaver.ps1 -Device '<authorised target>'` status check. The tested TCL
+registered Unified's DreamService but had no standard DREAM_SETTINGS activity.
+Its Ambient-only menu was not evidence of a missing service.
+
+When the owner explicitly approves selecting Unified, use `-Mode Enable` with
+a private `-BackupPath '../my-tv.screensaver-recovery.json'`. This selects the
+registered service through authorised ADB, snapshots the previous choice,
+verifies writes and attempts rollback on failure. `-Mode Restore` restores the
+saved settings if they have not since changed. Keep the original backup.
+Leave the timer alone unless the owner also approves `-IdleMinutes`.
+
+For a new installation, Install-Test.ps1 supports `-ConfigureScreensaver` and
+`-ScreensaverBackupPath` for the same approved setup in one command. It verifies
+the APK identity, TV API and existing signer first. Never clear photos or replace
+signatures to make an update install. Upload photos to Unified, then test its own
+DreamService: separate Ambient-preview photos are not shared across packages.
+See README.md for commands and recovery. No root, package disabling, hidden APIs
+or special app permission grants are needed. Stop if the TV refuses a write.
 
 ## Owner-built preview APK
 

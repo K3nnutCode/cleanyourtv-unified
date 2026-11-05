@@ -181,6 +181,7 @@
             android:exported="true"
             android:label="CleanYourTV Unified Photos"
             android:permission="android.permission.BIND_DREAM_SERVICE">
+            <meta-data android:name="android.service.dream" android:resource="@xml/unified_dream" />
             <intent-filter>
                 <action android:name="android.service.dreams.DreamService" />
                 <category android:name="android.intent.category.DEFAULT" />
