@@ -13,8 +13,9 @@ not scan your network. The agent should inspect the scripts before running them.
 
 ## What to have ready
 
-- A Windows computer with PowerShell 7, JDK 17, Android platform-tools (`adb`)
-  and Android SDK build-tools 34.0.0. A source build also needs platform 34.
+- A Windows, macOS or Linux computer with PowerShell 7, JDK 17, Android
+  platform-tools (`adb`) and Android SDK build-tools 34.0.0. A source build also
+  needs platform 34.
 - An authorised connection to the intended TV. List with `adb devices -l`;
   identify the model and stop if it is not your intended TV. If several TVs are
   connected, explicitly select one. Never bypass the normal TV prompt.
@@ -32,7 +33,13 @@ Download `cleanyourtv-unified-preview` from a successful **Build preview APK**
 run for the intended source revision, and extract it into a new folder.
 `SOURCE-COMMIT.txt` records that revision; `BUILD-RUN.txt` links the actual run.
 Check both against GitHub. Older artifacts lack these files and may predate
-installer/onboarding updates. Artifacts expire 30 days after their build.
+installer/onboarding updates. Artifacts expire 90 days after their build; main
+is rebuilt monthly so a current bundle should always exist. Downloading an
+artifact requires signing in to GitHub.
+
+Read `PREVIEW-SIGNER.txt`. `STABLE` bundles install over each other and keep your
+photos. An `UNSTABLE` bundle has a one-off signer and cannot update any other
+preview; only use it on a TV without Unified, or ask the owner for a stable one.
 
 SHA256SUMS.txt covers the APK, setup scripts and guides. Recalculate each listed
 file's SHA-256 and compare; do not run a script or APK with a mismatch. The
