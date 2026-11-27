@@ -8,10 +8,13 @@ foreach ($name in 'CYTV_KEYSTORE','CYTV_STORE_PASSWORD','CYTV_KEY_ALIAS','CYTV_K
 if (-not (Test-Path -LiteralPath $env:CYTV_KEYSTORE -PathType Leaf)) { throw 'Keystore does not exist' }
 $sdk = (Resolve-Path -LiteralPath $SdkRoot).Path
 $env:ANDROID_HOME = $sdk
-$signer = Join-Path $sdk 'build-tools/34.0.0/apksigner.bat'
+$onWindows = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
+$signer = Join-Path $sdk $(if ($onWindows) { 'build-tools/34.0.0/apksigner.bat' } else { 'build-tools/34.0.0/apksigner' })
+if (-not (Test-Path -LiteralPath $signer -PathType Leaf)) { throw "Android build-tools 34.0.0 are required: $signer was not found." }
+$gradle = if ($onWindows) { './gradlew.bat' } else { './gradlew' }
 Push-Location $PSScriptRoot
 try {
-    & ./gradlew.bat --no-daemon clean testReleaseUnitTest lintRelease assembleRelease
+    & $gradle --no-daemon clean testReleaseUnitTest lintRelease assembleRelease
     if ($LASTEXITCODE -ne 0) { throw 'Release checks failed; nothing is ready to distribute' }
     $apk = Join-Path $PSScriptRoot 'app/build/outputs/apk/release/app-release.apk'
     $signatureReport = & $signer verify --verbose --print-certs $apk

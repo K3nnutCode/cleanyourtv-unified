@@ -230,6 +230,23 @@ Permanent signing and timetable redistribution clearance are unresolved. Additio
 models, firmware/API coverage, reboot/recovery, real HDMI switching and the full
 remote matrix remain incomplete; session-expiry behaviour was not timed on hardware.
 
+## Setup-readiness fixes — 27 November 2026
+
+- Install-Test.ps1 and Build-Release.ps1 hard-coded Windows tool names
+  (`aapt.exe`, `apksigner.bat`, `gradlew.bat`) and failed on macOS/Linux with a
+  misleading "build-tools required" error. They now choose names per platform.
+- New `tests/Test-Install.ps1` (fake adb/aapt/apksigner) covers missing
+  build-tools, foreign package, old API, fresh install, same-signer update and
+  signer-mismatch protection; CI runs it. A mutation check confirmed it fails
+  when the signer guard is removed. Both PowerShell suites passed under
+  PowerShell 7.4.6 on Linux. Windows tool-name paths were not re-run on Windows.
+- CI previews can now be signed by a stable, dedicated preview key from
+  repository secrets, optionally pinned by `CYTV_PREVIEW_SIGNER_SHA256`; each
+  bundle states STABLE/UNSTABLE in `PREVIEW-SIGNER.txt`. The Gradle change was
+  not built locally (Android SDK unavailable in that session); CI is the check.
+  The key itself must be created by the owner; until then previews stay UNSTABLE.
+- Artifact retention raised to 90 days and main rebuilt monthly.
+
 ## Distribution gate
 
 Retain a production signing key and test the actual release APK on hardware.

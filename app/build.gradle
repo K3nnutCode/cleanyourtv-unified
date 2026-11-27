@@ -14,7 +14,20 @@ android {
     }
     def signingNames = ['CYTV_KEYSTORE', 'CYTV_STORE_PASSWORD', 'CYTV_KEY_ALIAS', 'CYTV_KEY_PASSWORD']
     def signingReady = signingNames.every { System.getenv(it) }
+    // Stable key for CI debug previews, so a tester can install a newer preview over an older one
+    // without uninstalling (which deletes their photos). Never the production release key: previews
+    // are debuggable. Absent locally and on pull requests, so those builds keep the default debug key.
+    def previewNames = ['CYTV_PREVIEW_KEYSTORE', 'CYTV_PREVIEW_STORE_PASSWORD', 'CYTV_PREVIEW_KEY_ALIAS', 'CYTV_PREVIEW_KEY_PASSWORD']
+    def previewReady = previewNames.every { System.getenv(it) }
     signingConfigs {
+        if (previewReady) {
+            preview {
+                storeFile file(System.getenv('CYTV_PREVIEW_KEYSTORE'))
+                storePassword System.getenv('CYTV_PREVIEW_STORE_PASSWORD')
+                keyAlias System.getenv('CYTV_PREVIEW_KEY_ALIAS')
+                keyPassword System.getenv('CYTV_PREVIEW_KEY_PASSWORD')
+            }
+        }
         if (signingReady) {
             distribution {
                 storeFile file(System.getenv('CYTV_KEYSTORE'))
@@ -25,7 +38,10 @@ android {
         }
     }
     buildTypes {
-        debug { versionNameSuffix '-debug' }
+        debug {
+            versionNameSuffix '-debug'
+            if (previewReady) signingConfig signingConfigs.preview
+        }
         release {
             minifyEnabled true
             shrinkResources true

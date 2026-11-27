@@ -94,6 +94,8 @@ does not publish a GitHub Release.
 Keep previews labelled as debug evaluation builds. A later production signing
 key cannot update a differently signed preview in place. Distribution to testers
 does not resolve the regional timetable licence question in NOTICE.md.
-Clean CI builds may also produce different debug signing keys. Keep the same
-preview APK for a test round; do not erase an existing photo library to bypass
-a signature mismatch.
+Check `PREVIEW-SIGNER.txt` in the bundle. `STABLE` previews share one signer and
+update in place. `UNSTABLE` previews (no preview key configured) each have a
+one-off signer; keep the same APK for a test round and never erase an existing
+photo library to bypass a signature mismatch. The installer scripts run in
+PowerShell 7 on Windows, macOS and Linux.

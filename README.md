@@ -25,15 +25,19 @@ checksums. No production release is automatic.
 
 ## Build and try
 
-Use PowerShell 7, JDK 17, Android platform-tools, SDK platform 34 and build-tools
-34.0.0. Set `ANDROID_HOME` to the SDK root. A source build can alternatively use an
-ignored `local.properties` with `sdk.dir`; in that case pass the same SDK path to
-Install-Test.ps1 using `-SdkRoot`. In this directory run:
+Use PowerShell 7 (Windows, macOS or Linux), JDK 17, Android platform-tools, SDK
+platform 34 and build-tools 34.0.0. Set `ANDROID_HOME` to the SDK root. A source
+build can alternatively use an ignored `local.properties` with `sdk.dir`; in that
+case pass the same SDK path to Install-Test.ps1 using `-SdkRoot`. In this directory
+run (on macOS/Linux use `./gradlew` instead of `./gradlew.bat`):
 
 ```powershell
 ./gradlew.bat --no-daemon testDebugUnitTest lintDebug assembleDebug
 ./Install-Test.ps1 -Device '<authorised ADB target>' -Apk './app/build/outputs/apk/debug/app-debug.apk'
 ```
+
+A local build is signed with your own machine's debug key, so it cannot update a
+CI preview already on the TV (the installer stops; it never deletes photos).
 
 The supplied debug APK is for evaluation. Its package ID is stable, but a later
 production certificate cannot replace this debug signature in place. Export or
@@ -124,6 +128,42 @@ HTTP is **not encrypted**. This is authenticated local upload for trusted home
 networks, not transport security for hostile/shared networks. Never expose its
 port to the internet. No telemetry, accounts, GPS or broad storage permissions.
 Brunei weather/prayer overlay is opt-in in setup; photos work without it.
+
+## Stable preview signing (maintainer, one-time)
+
+Without this, every CI run signs with a fresh one-off key, so no preview can be
+installed over an earlier one; testers would have to uninstall, which deletes
+their photos. The workflow warns and labels such bundles `UNSTABLE` in
+`PREVIEW-SIGNER.txt`. Set it up once with a **dedicated preview key — never the
+production release key**, because preview builds are debuggable. Outside this
+repository, on your own computer (keytool prompts for the password; for PKCS12
+the key password is the same as the store password):
+
+```bash
+keytool -genkeypair -keystore cytv-preview.p12 -storetype PKCS12 -alias cytv-preview -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=CleanYourTV Unified Preview"
+```
+
+Add four repository secrets (Settings → Secrets and variables → Actions), or with
+the GitHub CLI, which prompts for each value so nothing lands in shell history:
+
+```bash
+base64 -w0 cytv-preview.p12 | gh secret set CYTV_PREVIEW_KEYSTORE_B64 --repo K3nnutCode/cleanyourtv-unified
+```
+
+(macOS: `base64 -i cytv-preview.p12 | gh secret set ...`; Windows PowerShell:
+`[Convert]::ToBase64String([IO.File]::ReadAllBytes('cytv-preview.p12')) | gh secret set CYTV_PREVIEW_KEYSTORE_B64 --repo K3nnutCode/cleanyourtv-unified`.)
+Then `gh secret set` each of `CYTV_PREVIEW_STORE_PASSWORD`, `CYTV_PREVIEW_KEY_PASSWORD`
+(the same value) and `CYTV_PREVIEW_KEY_ALIAS` (`cytv-preview`). Back up the `.p12`
+and its password; losing them brings back the uninstall problem.
+
+Run **Build preview APK** on main. Its log suggests a repository variable
+`CYTV_PREVIEW_SIGNER_SHA256`; set it to the digest shown so later runs fail if
+the signer ever changes. Pull-request builds never receive the key.
+
+Moving to the stable signer is itself a signer change: a TV already running an
+older one-off preview must be reinstalled once. Export or re-upload originals
+first, because uninstalling deletes Unified's photo library. After that, stable
+previews install over each other and keep photos.
 
 ## Release signing and distribution
 

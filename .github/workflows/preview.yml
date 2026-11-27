@@ -5,6 +5,9 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Monthly rebuild of main so a downloadable bundle always exists (artifacts expire).
+  schedule:
+    - cron: '23 4 1 * *'
 
 permissions:
   contents: read
@@ -26,25 +29,59 @@ jobs:
       - name: Test reversible screensaver setup
         shell: pwsh
         run: ./tests/Test-ScreensaverSetup.ps1 -WorkingDirectory "${{ runner.temp }}/cytv-screensaver-tests"
+      - name: Test installer checks
+        shell: pwsh
+        run: ./tests/Test-Install.ps1 -WorkingDirectory "${{ runner.temp }}/cytv-install-tests"
+      - name: Load stable preview signing key
+        if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_B64: ${{ secrets.CYTV_PREVIEW_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.CYTV_PREVIEW_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.CYTV_PREVIEW_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.CYTV_PREVIEW_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::warning title=Unstable preview signer::One or more CYTV_PREVIEW_* secrets are not set. This preview uses a one-off debug key and cannot update any other preview without uninstalling (which deletes photos). See README 'Stable preview signing'."
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/cytv-preview.p12"
+          echo "CYTV_PREVIEW_KEYSTORE=$RUNNER_TEMP/cytv-preview.p12" >> "$GITHUB_ENV"
       - name: Test and build debug preview
+        env:
+          CYTV_PREVIEW_STORE_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.CYTV_PREVIEW_STORE_PASSWORD || '' }}
+          CYTV_PREVIEW_KEY_ALIAS: ${{ github.event_name != 'pull_request' && secrets.CYTV_PREVIEW_KEY_ALIAS || '' }}
+          CYTV_PREVIEW_KEY_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.CYTV_PREVIEW_KEY_PASSWORD || '' }}
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleDebug
           python3 verify_apk.py "$ANDROID_HOME/build-tools/34.0.0/aapt" app/build/outputs/apk/debug/app-debug.apk
       - name: Verify signature and prepare preview
         if: github.event_name != 'pull_request'
+        env:
+          EXPECTED_SIGNER: ${{ vars.CYTV_PREVIEW_SIGNER_SHA256 }}
         run: |
           mkdir -p preview
           cp app/build/outputs/apk/debug/app-debug.apk preview/CleanYourTV-Unified-1.0.0-alpha01-debug.apk
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose --print-certs preview/*.apk > preview/APK-Signature.txt
+          actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: \([0-9a-f]\{64\}\)$/\1/p' preview/APK-Signature.txt)
+          [ -n "$actual" ] || { echo "::error::Could not read the APK signer digest."; exit 1; }
+          if [ -n "${CYTV_PREVIEW_KEYSTORE:-}" ]; then
+            if [ -n "$EXPECTED_SIGNER" ] && [ "$actual" != "$(echo "$EXPECTED_SIGNER" | tr 'A-F' 'a-f')" ]; then
+              echo "::error::Preview signer $actual does not match repository variable CYTV_PREVIEW_SIGNER_SHA256."; exit 1
+            fi
+            [ -n "$EXPECTED_SIGNER" ] || echo "::warning::Set repository variable CYTV_PREVIEW_SIGNER_SHA256=$actual to pin the stable preview signer."
+            printf 'STABLE preview signer: %s\nPreviews with this signer install over each other; photos are kept.\n' "$actual" > preview/PREVIEW-SIGNER.txt
+          else
+            printf 'UNSTABLE one-off signer: %s\nThis APK cannot update a preview with a different signer. Do not uninstall to force it: that deletes photos.\n' "$actual" > preview/PREVIEW-SIGNER.txt
+          fi
           cp NOTICE.md LICENSE FONT-LICENSE-OFL.txt README.md QUICK_START.md TRY_WITH_AGENT.md VERIFICATION.md Install-Test.ps1 Set-Screensaver.ps1 preview/
           git rev-parse HEAD > preview/SOURCE-COMMIT.txt
           echo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > preview/BUILD-RUN.txt
           cd preview
-          sha256sum *.apk *.ps1 *.md LICENSE FONT-LICENSE-OFL.txt APK-Signature.txt SOURCE-COMMIT.txt BUILD-RUN.txt > SHA256SUMS.txt
+          sha256sum *.apk *.ps1 *.md LICENSE FONT-LICENSE-OFL.txt APK-Signature.txt PREVIEW-SIGNER.txt SOURCE-COMMIT.txt BUILD-RUN.txt > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
           name: cleanyourtv-unified-preview
           path: preview/
-          retention-days: 30
+          retention-days: 90
